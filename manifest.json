@@ -3,7 +3,7 @@
   "name": "Aardvark: the app for aardvarks (add to homescreen test page)",
   "display": "standalone",
   "id": "/?source=pwa",
-  "start_url": "/?source=pwa",
+  "start_url": "/static/Ai.html",
   "icons": [
       {
           "src": "apple-touch-icon.png",
