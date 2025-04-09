@@ -1,740 +1,783 @@
-<!-- Example web app with add to homescreen implemented.  JS in test-page.js -->
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <!-- ====================  BEGIN: These headers required for any webapp  ==================== -->
-
-    <meta charset="utf-8" />
-    <meta
-      name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover"
-    />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <title>Aardvark</title>
-    <!-- replace with your web app title-->
-    <link rel="manifest" crossorigin="use-credentials" href="manifest.json" />
-    <!-- copy your app logo to <web root>/apple-touch-icon.png, this is required by IOS Safari -->
-    <!-- ====================  END: These headers required for any webapp  ==================== -->
-
-    <!-- ====================  BEGIN: Include add-to-homescreen resources  ==================== -->
-
-    <link rel="stylesheet" href="./dist/add-to-homescreen.min.css" />
-  </head>
-  <!-- ====================  END: Include add-to-homescreen resources  ==================== -->
-  <!-- ====================  BEGIN: Testing Tailwind CSS side effects ================ -->
-  <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-  <!-- ====================  END: Testing Tailwind CSS side effects ================ -->
-
-  <!-- ====================  BEGIN: EXAMPLE WEBSITE CONTENT ==================== -->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Copilot Chat</title>
+  <!-- Optional: Additional chatbot functionality -->
+  <script src="https://cdn.jsdelivr.net/npm/@chaindesk/embeds@latest/dist/chatbox/index.js"></script>
+  <!-- Tesseract.js for OCR -->
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@2/dist/tesseract.min.js"></script>
   <style>
-    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
-
-    *,
-    *:after,
-    *:before {
-      box-sizing: border-box;
-    }
-
+    /* DARK THEME STYLING */
     body {
-      font-family: "Inter", sans-serif;
-      line-height: 1.5;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #eee;
+      font-family: Arial, sans-serif;
+      background: #1e1e1e;
+      margin: 0;
+      padding: 20px;
+      color: #f1f1f1;
+      animation: bodyFadeIn 1.5s ease-out;
     }
-
-    .menu {
-      padding: 2rem;
-      background-color: #fff;
-      /*position: relative;*/
-      width: calc(80px + 4 * 70px + 4rem);
-      display: flex;
-      justify-content: center;
-      border-radius: 20px 20px;
-      box-shadow: 0 10px 25px 0 rgba(0, 0, 0, 0.075);
-      position: fixed;
-      bottom: 0px;
-      z-index: 9999;
+    @keyframes bodyFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
     }
-
-    .link {
-      display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      width: 70px;
-      height: 50px;
-      border-radius: 99em;
-      position: relative;
-      z-index: 1;
-      overflow: hidden;
-      transform-origin: center left;
-      transition: width 0.2s ease-in;
-      text-decoration: none;
-      color: inherit;
+    h1 {
+      text-align: center;
+      color: #f1f1f1;
     }
-
-    .link:before {
-      position: absolute;
-      z-index: -1;
-      content: "";
+    /* TOP TAB BAR */
+    #tabBar {
+      max-width: 600px;
+      margin: 0 auto 20px auto;
+      text-align: center;
+    }
+    .tabButton {
+      padding: 10px 20px;
+      margin: 0 5px;
+      border: 1px solid #444;
+      background-color: #333;
+      cursor: pointer;
+      border-radius: 5px;
+      color: #f1f1f1;
+    }
+    .tabButton.active {
+      background-color: #007bff;
+      border-color: #007bff;
+    }
+    /* TAB CONTENT CONTAINERS */
+    .tabContent {
+      display: none;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .tabContent.active {
       display: block;
-      border-radius: 99em;
+    }
+    /* CHAT CONTAINER with Transition (Fade & Slide In) */
+    #chat {
+      background: #2a2a2a;
+      padding: 20px;
+      border: 1px solid #444;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      animation: fadeInSlide 1s ease-out;
+    }
+    @keyframes fadeInSlide {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #messages {
+      list-style-type: none;
+      padding: 0;
+      max-height: 400px;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    #messages li {
+      padding: 10px;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #444;
+    }
+    /* Chat Input Row with Integrated Image Upload */
+    #input {
+      display: flex;
+      align-items: center;
+    }
+    #input input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 5px;
+      margin-right: 10px;
+      background: #333;
+      color: #f1f1f1;
+    }
+    #send, #voiceChat, #uploadBtn {
+      padding: 10px 20px;
+      border: none;
+      background-color: #007bff;
+      color: #f1f1f1;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-right: 5px;
+    }
+    #send:hover, #voiceChat:hover, #uploadBtn:hover {
+      background-color: #0056b3;
+    }
+    #send:disabled, #voiceChat:disabled, #uploadBtn:disabled {
+      background-color: #555;
+      cursor: not-allowed;
+    }
+    /* Hide the file input element */
+    #imageFile { display: none; }
+    /* SPINNER */
+    .spinner-container {
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 100%;
       height: 100%;
-      top: 0;
-      transform: translateX(100%);
-      transition: transform 0.2s ease-in;
-      transform-origin: center right;
-      background-color: #eee;
-    }
-
-    .link:hover,
-    .link:focus {
-      outline: 0;
-      width: 130px;
-    }
-
-    .link:hover:before,
-    .link:focus:before,
-    .link:hover .link-title,
-    .link:focus .link-title {
-      transform: translateX(0);
-      opacity: 1;
-    }
-
-    .link-icon {
-      width: 28px;
-      height: 28px;
-      display: block;
-      flex-shrink: 0;
-      left: 18px;
-      position: absolute;
-    }
-
-    .link-icon svg {
-      width: 28px;
-      height: 28px;
-    }
-
-    .link-title {
-      transform: translateX(100%);
-      transition: transform 0.2s ease-in;
-      transform-origin: center right;
-      display: block;
-      text-align: center;
-      text-indent: 28px;
-      width: 100%;
-    }
-
-    .locales {
-      text-align: center;
-    }
-
-    ul#locales {
-      max-width: 400px;
-      display: flex;
-      flex-wrap: wrap;
-      flex-direction: row;
-      list-style-type: none;
-      padding-left: 0;
-      width: fit-content;
-    }
-
-    ul#locales li {
-      cursor: pointer;
-      margin-left: 8px;
-    }
-  </style>
-  <style>
-    @import url("https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700;800;900&display=swap");
-
-    /*
-  *,
-  *:after,
-  *:before {
-    box-sizing: border-box;
-  }*/
-
-    .card-feed {
-      font-family: "Lexend", sans-serif;
-      line-height: 1.5;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
+      display: none;
       justify-content: center;
-      color: #393232;
+      align-items: center;
+      background-color: rgba(0,0,0,0.4);
+      z-index: 1000;
+    }
+    .spinner {
+      border: 16px solid #333;
+      border-top: 16px solid #007bff;
+      border-radius: 50%;
+      width: 120px;
+      height: 120px;
+      animation: spin 2s linear infinite;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    /* TEACH & CONFIGURE TABS STYLING */
+    #teachForm, #configForm {
+      display: flex;
       flex-direction: column;
-
-      gap: 15px;
-
-      padding-bottom: 120px;
+      gap: 10px;
     }
-
-    .card-list figure {
-      margin: 0px 0px;
+    #teachForm input, #teachForm textarea,
+    #configForm textarea {
+      padding: 8px;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background: #333;
+      color: #f1f1f1;
     }
-
-    .card-list img {
-      max-width: 100%;
-      display: block;
-    }
-
-    .card-list {
-      width: 90%;
-      max-width: 400px;
-    }
-
-    .card-list .card {
-      background-color: #fff;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05),
-        0 20px 50px 0 rgba(0, 0, 0, 0.1);
-      border-radius: 15px;
-      overflow: hidden;
-      padding: 1.25rem;
-      position: relative;
-      transition: 0.15s ease-in;
-    }
-
-    .card-list .card:hover,
-    .card-list .card:focus-within {
-      box-shadow: 0 0 0 2px #16c79a, 0 10px 60px 0 rgba(0, 0, 0, 0.1);
-      transform: translatey(-5px);
-    }
-
-    .card-list .card-image {
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .card-list .card-header {
-      margin-top: 1.5rem;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .card-list .card-header a {
-      font-weight: 600;
-      font-size: 1.375rem;
-      line-height: 1.25;
-      padding-right: 1rem;
-      text-decoration: none;
-      color: inherit;
-      will-change: transform;
-    }
-
-    .card-list .card-header a:after {
-      content: "";
-      position: absolute;
-      left: 0;
-      top: 0;
-      right: 0;
-      bottom: 0;
-    }
-
-    .card-list .icon-button {
-      border: 0;
-      background-color: #fff;
-      border-radius: 50%;
-      width: 2.5rem;
-      height: 2.5rem;
-      display: flex;
-      padding: 0px;
-      justify-content: center;
-      align-items: center;
-      flex-shrink: 0;
-      font-size: 1.25rem;
-      transition: 0.25s ease;
-      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05), 0 3px 8px 0 rgba(0, 0, 0, 0.15);
-      z-index: 1;
+    #teachForm button, #configForm button {
+      align-self: flex-start;
+      padding: 8px 16px;
+      border: none;
+      background-color: #007bff;
+      color: #f1f1f1;
+      border-radius: 5px;
       cursor: pointer;
-      color: #565656;
     }
-
-    .card-list .icon-button svg {
-      width: 1em;
-      height: 1em;
+    /* Button to Load Basic Teachings */
+    #teachBasic {
+      margin-top: 10px;
+      padding: 8px 16px;
+      border: none;
+      background-color: #28a745;
+      color: #f1f1f1;
+      border-radius: 5px;
+      cursor: pointer;
     }
-
-    .card-list .icon-button:hover,
-    .card-list .icon-button:focus {
-      background-color: #ec4646;
-      color: #fff;
+    /* Import Teaching Data Section */
+    #importSection {
+      margin-top: 20px;
+      border-top: 1px solid #444;
+      padding-top: 10px;
     }
-
-    .card-list .card-footer {
-      margin-top: 1.25rem;
-      border-top: 1px solid #ddd;
-      padding-top: 1.25rem;
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
+    #importSection input {
+      padding: 8px;
+      border: 1px solid #444;
+      border-radius: 5px;
+      background: #333;
+      color: #f1f1f1;
+      margin-right: 10px;
     }
-
-    .card-list .card-meta {
-      display: flex;
-      align-items: center;
-      color: #787878;
+    #importButton {
+      padding: 8px 16px;
+      border: none;
+      background-color: #17a2b8;
+      color: #f1f1f1;
+      border-radius: 5px;
+      cursor: pointer;
     }
-
-    .card-list .card-meta:first-child:after {
-      display: block;
-      content: "";
-      width: 4px;
-      height: 4px;
-      border-radius: 50%;
-      background-color: currentcolor;
-      margin-left: 0.75rem;
-      margin-right: 0.75rem;
+    /* Teach List Styling */
+    #teachList {
+      margin-top: 20px;
+      list-style-type: none;
+      padding: 0;
     }
-
-    .card-list .card-meta svg {
-      flex-shrink: 0;
-      width: 1em;
-      height: 1em;
-      margin-right: 0.25em;
+    #teachList li {
+      padding: 5px;
+      border-bottom: 1px solid #444;
+    }
+    /* Configure Chatbot Tab Styling */
+    #configForm textarea {
+      width: 100%;
+      min-height: 100px;
+    }
+    #configForm button {
+      background-color: #ffc107;
+      color: #1e1e1e;
     }
   </style>
-
-  <body>
-    <div class="card-feed">
-      <div class="card-list">
-        <article class="card">
-          <figure class="card-image">
-            <img
-              src="https://images.unsplash.com/photo-1643553675395-e5f356ec2551?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2073&q=80"
-              alt=""
-            />
-          </figure>
-          <div class="card-header">
-            <a href="#">Spotted nice anthill!</a>
-            <button class="icon-button">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="Heart"
-              >
-                <path
-                  d="M7 3C4.239 3 2 5.216 2 7.95c0 2.207.875 7.445 9.488 12.74a.985.985 0 0 0 1.024 0C21.125 15.395 22 10.157 22 7.95 22 5.216 19.761 3 17 3s-5 3-5 3-2.239-3-5-3z"
-                />
-              </svg>
-            </button>
-          </div>
-          <div class="card-footer">
-            <div class="card-meta card-meta--views">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#393232"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="EyeOpen"
-              >
-                <path
-                  d="M21.257 10.962c.474.62.474 1.457 0 2.076C19.764 14.987 16.182 19 12 19c-4.182 0-7.764-4.013-9.257-5.962a1.692 1.692 0 0 1 0-2.076C4.236 9.013 7.818 5 12 5c4.182 0 7.764 4.013 9.257 5.962z"
-                />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              10,288
-            </div>
-            <div class="card-meta card-meta--date">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="Calendar"
-              >
-                <rect x="2" y="4" width="20" height="18" rx="4" />
-                <path d="M8 2v4" />
-                <path d="M16 2v4" />
-                <path d="M2 10h20" />
-              </svg>
-              Mar 02, 2023
-            </div>
-          </div>
-        </article>
-      </div>
-      <div class="card-list">
-        <article class="card">
-          <figure class="card-image">
-            <img
-              src="https://images.unsplash.com/photo-1673903302972-7fe8e0f948a4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2338&q=80"
-              alt=""
-            />
-          </figure>
-          <div class="card-header">
-            <a href="#">selfie</a>
-            <button class="icon-button">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="Heart"
-              >
-                <path
-                  d="M7 3C4.239 3 2 5.216 2 7.95c0 2.207.875 7.445 9.488 12.74a.985.985 0 0 0 1.024 0C21.125 15.395 22 10.157 22 7.95 22 5.216 19.761 3 17 3s-5 3-5 3-2.239-3-5-3z"
-                />
-              </svg>
-            </button>
-          </div>
-          <div class="card-footer">
-            <div class="card-meta card-meta--views">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="EyeOpen"
-              >
-                <path
-                  d="M21.257 10.962c.474.62.474 1.457 0 2.076C19.764 14.987 16.182 19 12 19c-4.182 0-7.764-4.013-9.257-5.962a1.692 1.692 0 0 1 0-2.076C4.236 9.013 7.818 5 12 5c4.182 0 7.764 4.013 9.257 5.962z"
-                />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              3,422
-            </div>
-            <div class="card-meta card-meta--date">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="Calendar"
-              >
-                <rect x="2" y="4" width="20" height="18" rx="4" />
-                <path d="M8 2v4" />
-                <path d="M16 2v4" />
-                <path d="M2 10h20" />
-              </svg>
-              Fed 16, 2023
-            </div>
-          </div>
-        </article>
-      </div>
-      <div class="card-list">
-        <article class="card">
-          <figure class="card-image">
-            <img
-              src="https://images.unsplash.com/photo-1491723203629-ac87f78dc19b?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
-              alt=""
-            />
-          </figure>
-          <div class="card-header">
-            <a href="#">Are these edible? Asking for a friend..</a>
-            <button class="icon-button">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="Heart"
-              >
-                <path
-                  d="M7 3C4.239 3 2 5.216 2 7.95c0 2.207.875 7.445 9.488 12.74a.985.985 0 0 0 1.024 0C21.125 15.395 22 10.157 22 7.95 22 5.216 19.761 3 17 3s-5 3-5 3-2.239-3-5-3z"
-                />
-              </svg>
-            </button>
-          </div>
-          <div class="card-footer">
-            <div class="card-meta card-meta--views">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="EyeOpen"
-              >
-                <path
-                  d="M21.257 10.962c.474.62.474 1.457 0 2.076C19.764 14.987 16.182 19 12 19c-4.182 0-7.764-4.013-9.257-5.962a1.692 1.692 0 0 1 0-2.076C4.236 9.013 7.818 5 12 5c4.182 0 7.764 4.013 9.257 5.962z"
-                />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              2,465
-            </div>
-            <div class="card-meta card-meta--date">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                display="block"
-                id="Calendar"
-              >
-                <rect x="2" y="4" width="20" height="18" rx="4" />
-                <path d="M8 2v4" />
-                <path d="M16 2v4" />
-                <path d="M2 10h20" />
-              </svg>
-              Jul 15, 2023
-            </div>
-          </div>
-        </article>
-      </div>
-      <div class="locales">
-        <div>Locales</div>
-        <ul id="locales"></ul>
+</head>
+<body>
+  <h1>Copilot Chat</h1>
+  
+  <!-- TOP TAB BAR -->
+  <div id="tabBar">
+    <button class="tabButton active" data-tab="chatTab">Chat</button>
+    <button class="tabButton" data-tab="teachTab">Teach Chatbot</button>
+    <button class="tabButton" data-tab="configureTab">Configure Chatbot</button>
+  </div>
+  
+  <!-- CHAT TAB CONTENT -->
+  <div id="chatTab" class="tabContent active">
+    <div id="chat">
+      <ul id="messages"></ul>
+      <div id="input">
+        <input type="text" id="userInput" placeholder="Type your message here...">
+        <button id="send">Send</button>
+        <button id="voiceChat">Voice Chat</button>
+        <button id="uploadBtn" title="Upload Image">＋</button>
+        <input type="file" id="imageFile" accept="image/*">
       </div>
     </div>
-
-    <div class="menu">
-      <a href="#" class="link">
-        <span class="link-icon">
-          <!-- icon -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="192"
-            height="192"
-            fill="currentColor"
-            viewBox="0 0 256 256"
-          >
-            <rect width="256" height="256" fill="none"></rect>
-            <path
-              d="M213.3815,109.61945,133.376,36.88436a8,8,0,0,0-10.76339.00036l-79.9945,72.73477A8,8,0,0,0,40,115.53855V208a8,8,0,0,0,8,8H208a8,8,0,0,0,8-8V115.53887A8,8,0,0,0,213.3815,109.61945Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></path>
-          </svg>
-          <!-- /icon -->
-        </span>
-        <span class="link-title">Home</span>
-      </a>
-      <a href="#" class="link">
-        <span class="link-icon">
-          <!-- icon -->
-          <svg
-            version="1.1"
-            id="svg4619"
-            inkscape:version="0.91 r13725"
-            sodipodi:docname="mountain-15.svg"
-            xmlns:cc="http://creativecommons.org/ns#"
-            xmlns:dc="http://purl.org/dc/elements/1.1/"
-            xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-            xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-            xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
-            xmlns:svg="http://www.w3.org/2000/svg"
-            xmlns="http://www.w3.org/2000/svg"
-            xmlns:xlink="http://www.w3.org/1999/xlink"
-            x="0px"
-            y="0px"
-            width="15px"
-            height="15px"
-            viewBox="0 0 15 15"
-            style="enable-background: new 0 0 15 15"
-            xml:space="preserve"
-          >
-            <path
-              id="path5571"
-              inkscape:connector-curvature="0"
-              sodipodi:nodetypes="sccssssccsccccccccc"
-              d="M7.5,2C7.2,2,7.1,2.2,6.9,2.4
-	l-5.8,9.5C1,12,1,12.2,1,12.3C1,12.8,1.4,13,1.7,13h11.6c0.4,0,0.7-0.2,0.7-0.7c0-0.2,0-0.2-0.1-0.4L8.2,2.4C8,2.2,7.8,2,7.5,2z
-	 M7.5,3.5L10.8,9H10L8.5,7.5L7.5,9l-1-1.5L5,9H4.1L7.5,3.5z"
-            />
-          </svg>
-          <!-- /icon -->
-        </span>
-        <span class="link-title">Anthills</span>
-      </a>
-      <a href="#" class="link">
-        <span class="link-icon">
-          <!-- icon -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="192"
-            height="192"
-            fill="currentColor"
-            viewBox="0 0 256 256"
-          >
-            <rect width="256" height="256" fill="none"></rect>
-            <path
-              d="M45.42853,176.99811A95.95978,95.95978,0,1,1,79.00228,210.5717l.00023-.001L45.84594,220.044a8,8,0,0,1-9.89-9.89l9.47331-33.15657Z"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></path>
-            <line
-              x1="96"
-              y1="112"
-              x2="160"
-              y2="112"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></line>
-            <line
-              x1="96"
-              y1="144"
-              x2="160"
-              y2="144"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></line>
-          </svg>
-          <!-- /icon -->
-        </span>
-        <span class="link-title">Chat</span>
-      </a>
-
-      <a href="#" class="link">
-        <span class="link-icon">
-          <!-- icon -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="192"
-            height="192"
-            fill="currentColor"
-            viewBox="0 0 256 256"
-          >
-            <rect width="256" height="256" fill="none"></rect>
-            <circle
-              cx="116"
-              cy="116"
-              r="84"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></circle>
-            <line
-              x1="175.39356"
-              y1="175.40039"
-              x2="223.99414"
-              y2="224.00098"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></line>
-          </svg>
-          <!-- /icon -->
-        </span>
-        <span class="link-title">Search</span>
-      </a>
-      <a href="#" class="link">
-        <span class="link-icon">
-          <!-- icon -->
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="192"
-            height="192"
-            fill="currentColor"
-            viewBox="0 0 256 256"
-          >
-            <rect width="256" height="256" fill="none"></rect>
-            <circle
-              cx="128"
-              cy="96"
-              r="64"
-              fill="none"
-              stroke="currentColor"
-              stroke-miterlimit="10"
-              stroke-width="16"
-            ></circle>
-            <path
-              d="M30.989,215.99064a112.03731,112.03731,0,0,1,194.02311.002"
-              fill="none"
-              stroke="currentColor"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="16"
-            ></path>
-          </svg>
-          <!-- /icon -->
-        </span>
-        <span class="link-title">Profile</span>
-      </a>
+  </div>
+  
+  <!-- TEACH CHATBOT TAB CONTENT -->
+  <div id="teachTab" class="tabContent">
+    <h3>Teach Chatbot</h3>
+    <p>Enter a question and its corresponding answer to update the chatbot’s responses.</p>
+    <form id="teachForm">
+      <input type="text" id="teachQuestion" placeholder="Question (e.g., what's 100x100?)" required>
+      <input type="text" id="teachAnswer" placeholder="Answer (e.g., 10000)" required>
+      <button type="submit">Save Correction</button>
+    </form>
+    <button id="teachBasic">Teach Chatbot Basics</button>
+    <ul id="teachList"></ul>
+    <div id="importSection">
+      <h4>Import Teaching Data</h4>
+      <input type="text" id="importSubject" placeholder="Subject (e.g., math)" required>
+      <input type="url" id="importLink" placeholder="URL to import teaching data" required>
+      <button id="importButton">Import Teaching Data</button>
     </div>
-
-    <!-- ====================  END: EXAMPLE WEBSITE CONTENT ==================== -->
-
-    <!-- ====================  BEGIN: initialize add-to-homescreen library  ==================== -->
-
-    <script>
-      window.addEventListener("load", function () {
-        window.AddToHomeScreenInstance = window.AddToHomeScreen({
-          appName: "Aardvark", // Name of the app. [Required]
-          appNameDisplay: "standalone", // Display position of the app name [Optional]
-          appIconUrl: "./dist/assets/sample/img/aardvark-logo.png", // App icon link (square, at least 40 x 40 pixels) [Required]
-          assetUrl: "./dist/assets/img/", // Link to directory of library image assets [Required]
-          maxModalDisplayCount: -1, // If set, the modal will only show this many times [Optional. Default: -1 (no limit).]
-          displayOptions:{ showMobile: true, showDesktop: true }, // show on mobile/desktop [Optional] Default: show everywhere
-          allowClose: true, // allow the user to close the modal by tapping outside of it. [Optional. Default: true]
-          showArrow: false, // show the arrow on the modal [Optional. Default: true]
-          // (Debugging: Use this.clearModalDisplayCount() to reset the count)
-        });
-        window.AddToHomeScreenInstance.show(); // popup is only shown if web app is not already added to homescreen
+  </div>
+  
+  <!-- CONFIGURE CHATBOT TAB CONTENT -->
+  <div id="configureTab" class="tabContent">
+    <h3>Configure Chatbot Personality</h3>
+    <p>Enter a custom personality or configuration prompt for your chatbot. This will be used as the system instruction for DeepSeek and as context for ChatGPT fallback.</p>
+    <form id="configForm">
+      <textarea id="chatbotPersonality" placeholder="For example: You are a friendly, witty, knowledgeable assistant who loves helping students with school work." required></textarea>
+      <button type="submit">Save Configuration</button>
+    </form>
+  </div>
+  
+  <!-- SPINNER -->
+  <div id="spinner-container" class="spinner-container">
+    <div class="spinner"></div>
+  </div>
+  
+  <script>
+    /***** TEACHING DATA MANAGEMENT *****/
+    let teachings = JSON.parse(localStorage.getItem('teachings')) || {};
+    function updateTeachList() {
+      const teachList = document.getElementById('teachList');
+      teachList.innerHTML = '';
+      for (let key in teachings) {
+        const li = document.createElement('li');
+        li.textContent = `${key} --> ${teachings[key]}`;
+        teachList.appendChild(li);
+      }
+    }
+    updateTeachList();
+    
+    document.getElementById('teachForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const question = document.getElementById('teachQuestion').value.trim().toLowerCase();
+      const answer = document.getElementById('teachAnswer').value.trim();
+      if (question && answer) {
+        teachings[question] = answer;
+        localStorage.setItem('teachings', JSON.stringify(teachings));
+        updateTeachList();
+        alert('Teaching saved!');
+        document.getElementById('teachQuestion').value = '';
+        document.getElementById('teachAnswer').value = '';
+      }
+    });
+    
+    // Teach Chatbot Basics
+    document.getElementById('teachBasic').addEventListener('click', function() {
+      const basics = {
+        "what is 2+2": "4",
+        "what is 10 divided by 2": "5",
+        "who discovered america": "Christopher Columbus",
+        "when did world war ii end": "1945",
+        "what is photosynthesis": "Photosynthesis is the process by which green plants use sunlight to synthesize foods from CO₂ and water.",
+        "what is gravity": "Gravity is the force of attraction between two masses.",
+        "what is a thesis statement": "A thesis statement is a concise summary of the main point of an essay or research paper.",
+        "what is an essay": "An essay is a short piece of writing on a particular subject."
+      };
+      teachings = { ...basics, ...teachings };
+      localStorage.setItem('teachings', JSON.stringify(teachings));
+      updateTeachList();
+      alert('Basic teachings added!');
+    });
+    
+    // Import Teaching Data (Manual)
+    document.getElementById('importButton').addEventListener('click', async function() {
+      const subject = document.getElementById('importSubject').value.trim().toLowerCase();
+      const url = document.getElementById('importLink').value.trim();
+      if (!subject || !url) {
+        alert("Please enter both a subject and a URL.");
+        return;
+      }
+      try {
+        document.getElementById('spinner-container').style.display = 'flex';
+        const response = await fetch(url);
+        document.getElementById('spinner-container').style.display = 'none';
+        if (!response.ok) {
+          alert("Failed to fetch content from the URL.");
+          return;
+        }
+        const contentType = response.headers.get("content-type");
+        let importedContent = "";
+        if (contentType && contentType.includes("text/html")) {
+          const htmlText = await response.text();
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(htmlText, "text/html");
+          importedContent = doc.body.innerText;
+        } else {
+          importedContent = await response.text();
+        }
+        if (!importedContent) {
+          alert("No teaching data was found at the provided URL.");
+          return;
+        }
+        // Check that the content is related to the subject.
+        if (!importedContent.toLowerCase().includes(subject)) {
+          alert("Warning: The imported content does not appear to relate to the subject.");
+        }
+        if (teachings[subject]) {
+          teachings[subject] += "\n" + importedContent;
+        } else {
+          teachings[subject] = importedContent;
+        }
+        localStorage.setItem('teachings', JSON.stringify(teachings));
+        updateTeachList();
+        alert("Teaching data imported successfully!");
+        document.getElementById('importSubject').value = "";
+        document.getElementById('importLink').value = "";
+      } catch (err) {
+        document.getElementById('spinner-container').style.display = 'none';
+        alert("Error importing teaching data: " + err.message);
+      }
+    });
+    
+    /***** DEFAULT TEACHING DATA SYNC *****/
+    async function loadDefaultTeachingData() {
+      const defaultData = [
+        // Adjust these URLs to point to resources that contain text data.
+        { subject: "math", url: "https://www.education.com/resources/math/" },
+        { subject: "science", url: "https://undsci.berkeley.edu/understanding-science-101/what-is-science/" },
+        { subject: "history", url: "https://www.worldhistory.org/" },
+        { subject: "study skills", url: "https://www.britannica.com/topic/education" }
+      ];
+      for (let item of defaultData) {
+        let subject = item.subject.toLowerCase();
+        if (!teachings[subject]) {
+          try {
+            const res = await fetch(item.url);
+            if (res.ok) {
+              let content;
+              const contentType = res.headers.get("content-type");
+              if (contentType && contentType.includes("text/html")) {
+                const htmlText = await res.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, "text/html");
+                content = doc.body.innerText;
+              } else {
+                content = await res.text();
+              }
+              teachings[subject] = content;
+              localStorage.setItem('teachings', JSON.stringify(teachings));
+              updateTeachList();
+            } else {
+              console.log("Failed to fetch default data for subject:", subject);
+            }
+          } catch (e) {
+            console.error("Error fetching default data for subject:", subject, e);
+          }
+        }
+      }
+    }
+    loadDefaultTeachingData();
+    
+    /***** CONFIGURE CHATBOT PERSONALITY *****/
+    let chatbotPersonality = localStorage.getItem('chatbot_personality') || "You are a helpful assistant. If you are unsure, provide your best informed guess.";
+    document.getElementById('chatbotPersonality').value = chatbotPersonality;
+    
+    document.getElementById('configForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const personality = document.getElementById('chatbotPersonality').value.trim();
+      if (personality) {
+        localStorage.setItem('chatbot_personality', personality);
+        alert("Chatbot personality updated!");
+      }
+    });
+    
+    /***** TAB SWITCHING LOGIC *****/
+    const tabButtons = document.querySelectorAll('.tabButton');
+    const tabContents = document.querySelectorAll('.tabContent');
+    tabButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.getAttribute('data-tab')).classList.add('active');
       });
-    </script>
-    <!-- ====================  END: initialize add-to-homescreen library  ==================== -->
-  </body>
+    });
+    
+    /***** HELPER FUNCTIONS *****/
+    // Check if the input is a math expression (only digits, operators, spaces, parentheses, decimals)
+    function isMathExpression(input) {
+      return /^[\d\s+\-*/().]+$/.test(input);
+    }
+    
+    function evaluateMath(expression) {
+      try {
+        expression = expression.trim();
+        const safeExpression = expression.replace(/[^0-9+\-*/().]/g, '');
+        if (!safeExpression || !/\d/.test(safeExpression)) {
+          return "error evaluating the math expression";
+        }
+        return eval(safeExpression);
+      } catch (error) {
+        return "error evaluating the math expression";
+      }
+    }
+    
+    /***** CHATGPT FALLBACK (Using GPT-4) *****/
+    async function chatGPT(userInput) {
+      const apiKey = "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";
+      const apiUrl = "https://api.openai.com/v1/chat/completions";
+      const payload = {
+        model: "gpt-4",
+        messages: [
+          { role: "system", content: localStorage.getItem('chatbot_personality') || "You are a helpful assistant." },
+          { role: "user", content: userInput }
+        ]
+      };
+      try {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+        const data = await response.json();
+        if (data.choices && data.choices.length > 0) {
+          return data.choices[0].message.content.trim();
+        }
+        return "";
+      } catch (e) {
+        console.error("ChatGPT error:", e);
+        return "";
+      }
+    }
+    
+    /***** DATA SOURCES *****/
+    async function deepSeekChat(userInput) {
+      const apiKey = "sk-5a079b5335564dba87a3f037274dc108";
+      const url = "https://api.deepseek.com/chat/completions";
+      const personality = localStorage.getItem('chatbot_personality') || "You are a helpful assistant. If you are unsure, provide your best informed guess.";
+      const payload = {
+        model: "deepseek-chat",
+        messages: [
+          { role: "system", content: personality },
+          { role: "user", content: userInput }
+        ],
+        stream: false
+      };
+      try {
+        document.getElementById('spinner-container').style.display = 'flex';
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + apiKey
+          },
+          body: JSON.stringify(payload)
+        });
+        document.getElementById('spinner-container').style.display = 'none';
+        const data = await response.json();
+        console.log("DeepSeek API response:", data);
+        if (data && data.choices && data.choices.length > 0) {
+          const answer = data.choices[0].message.content || data.choices[0].text || "";
+          return answer.trim();
+        }
+        return "";
+      } catch (error) {
+        document.getElementById('spinner-container').style.display = 'none';
+        console.error("DeepSeek error:", error);
+        return "";
+      }
+    }
+    
+    async function duckDuckGoSearch(query) {
+      const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`;
+      try {
+        let response = await fetch(url);
+        let data = await response.json();
+        if (data.AbstractText && data.AbstractText.length > 0) {
+          return data.AbstractText;
+        }
+        return "";
+      } catch (error) {
+        console.error("DuckDuckGo error:", error);
+        return "";
+      }
+    }
+    
+    // Hypothetical duck.ai search function
+    async function duckAISearch(query) {
+      try {
+        // Replace the URL with the actual endpoint for duck.ai if available.
+        const url = `https://api.duck.ai/search?q=${encodeURIComponent(query)}`;
+        let response = await fetch(url);
+        let data = await response.json();
+        // Assume the result is in data.result
+        if (data.result && data.result.length > 0) {
+          return data.result;
+        }
+        return "";
+      } catch (error) {
+        console.error("duck.ai error:", error);
+        return "";
+      }
+    }
+    
+    // Hypothetical Escosia search function
+    async function escosiaSearch(query) {
+      try {
+        // Replace the URL with the actual endpoint for Escosia if available.
+        const url = `https://api.escosia.com/search?q=${encodeURIComponent(query)}`;
+        let response = await fetch(url);
+        let data = await response.json();
+        // Assume the result is in data.answer
+        if (data.answer && data.answer.length > 0) {
+          return data.answer;
+        }
+        return "";
+      } catch (error) {
+        console.error("Escosia error:", error);
+        return "";
+      }
+    }
+    
+    // Hypothetical Tor search function
+    async function torSearch(query) {
+      try {
+        // Replace the URL with the actual endpoint for Tor search if available.
+        const url = `https://api.torsearch.com/search?q=${encodeURIComponent(query)}`;
+        let response = await fetch(url);
+        let data = await response.json();
+        // Assume the result is in data.result
+        if (data.result && data.result.length > 0) {
+          return data.result;
+        }
+        return "";
+      } catch (error) {
+        console.error("Tor search error:", error);
+        return "";
+      }
+    }
+    
+    // Fetch conversational dataset from GitHub (PolyAI-LDN)
+    async function conversationDatasetSearch(query) {
+      try {
+        const datasetUrl = "https://raw.githubusercontent.com/PolyAI-LDN/conversational-datasets/master/conversations.json";
+        let response = await fetch(datasetUrl);
+        let data = await response.json();
+        for (let conv of data) {
+          if (conv.question && conv.answer && conv.question.toLowerCase().includes(query.toLowerCase())) {
+            return conv.answer;
+          }
+        }
+        return "";
+      } catch (e) {
+        console.error("Conversation dataset error:", e);
+        return "";
+      }
+    }
+    
+    function isAcceptable(answer) {
+      if (!answer) return false;
+      const clean = answer.trim().toLowerCase();
+      if (clean === "" || clean.includes("error") || clean === "i'm still yn so idk") {
+        return false;
+      }
+      return true;
+    }
+    
+    // Check if the input is a greeting.
+    function isGreeting(input) {
+      let lower = input.trim().toLowerCase().replace(/[!.,?]/g, "");
+      const greetings = ["hi", "hello", "hey", "howdy", "hola"];
+      return greetings.includes(lower);
+    }
+    
+    // Final Response Chain:
+    // 1. If greeting → friendly greeting.
+    // 2. If math expression → evaluate it.
+    // 3. Otherwise, try sources in this order:
+    //    ChatGPT (GPT‑4) → DeepSeek → duck.ai → DuckDuckGo → Google → Escosia → Tor → fallback.
+    async function generateResponse(userInput) {
+      if (isGreeting(userInput)) {
+        return "Hello! How can I help you today?";
+      }
+      
+      if (isMathExpression(userInput)) {
+        let result = evaluateMath(userInput);
+        return "The answer is " + result;
+      }
+      
+      let answer = await chatGPT(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      answer = await deepSeekChat(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      answer = await duckAISearch(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      answer = await duckDuckGoSearch(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      answer = await googleSearch(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      answer = await escosiaSearch(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      answer = await torSearch(userInput);
+      if (isAcceptable(answer)) return answer;
+      
+      return "can you repeat more clearly";
+    }
+    
+    /***** VOICE CHAT *****/
+    window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition || null;
+    if (window.SpeechRecognition) {
+      const recognition = new window.SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = "en-US";
+      document.getElementById('voiceChat').addEventListener('click', () => {
+        recognition.start();
+      });
+      recognition.onresult = async (event) => {
+        const transcript = event.results[0][0].transcript;
+        document.getElementById('userInput').value = transcript;
+        document.getElementById('send').click();
+      };
+      recognition.onerror = (event) => {
+        console.error("Speech recognition error", event);
+      };
+    } else {
+      document.getElementById('voiceChat').disabled = true;
+      document.getElementById('voiceChat').textContent = "Voice Chat Not Supported";
+    }
+    
+    /***** CHAT INTERACTION *****/
+    document.getElementById('send').addEventListener('click', async () => {
+      const userInput = document.getElementById('userInput').value.trim();
+      if (userInput === '') return;
+      const messages = document.getElementById('messages');
+      const userMessage = document.createElement('li');
+      userMessage.textContent = `User: ${userInput}`;
+      messages.appendChild(userMessage);
+      try {
+        const response = await generateResponse(userInput);
+        const botMessage = document.createElement('li');
+        botMessage.textContent = `Chatbot: ${response}`;
+        messages.appendChild(botMessage);
+        if (window.speechSynthesis) {
+          const utterance = new SpeechSynthesisUtterance(response);
+          speechSynthesis.speak(utterance);
+        }
+      } catch (error) {
+        console.error(error);
+        const errorMessage = document.createElement('li');
+        errorMessage.textContent = `Chatbot: An error occurred. Please try again later.`;
+        messages.appendChild(errorMessage);
+      }
+      document.getElementById('userInput').value = '';
+      messages.scrollTop = messages.scrollHeight;
+    });
+    
+    /***** IMAGE PRE-PROCESSING & OCR *****/
+    function preprocessImage(imageSrc) {
+      return new Promise((resolve, reject) => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const img = new Image();
+        img.crossOrigin = "Anonymous";
+        img.src = imageSrc;
+        img.onload = () => {
+          canvas.width = img.width;
+          canvas.height = img.height;
+          ctx.drawImage(img, 0, 0);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const data = imageData.data;
+          for (let i = 0; i < data.length; i += 4) {
+            let avg = (data[i] + data[i+1] + data[i+2]) / 3;
+            data[i] = avg;
+            data[i+1] = avg;
+            data[i+2] = avg;
+          }
+          ctx.putImageData(imageData, 0, 0);
+          resolve(canvas.toDataURL());
+        };
+        img.onerror = (err) => reject(err);
+      });
+    }
+    
+    // When the plus button is clicked, trigger the hidden file input.
+    document.getElementById('uploadBtn').addEventListener('click', () => {
+      document.getElementById('imageFile').click();
+    });
+    
+    // When a file is selected, process it using OCR and query DeepSeek.
+    document.getElementById('imageFile').addEventListener('change', () => {
+      const file = document.getElementById('imageFile').files[0];
+      const messages = document.getElementById('messages');
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const imageMessage = document.createElement('li');
+          imageMessage.textContent = "User sent an image:";
+          const img = document.createElement('img');
+          img.src = e.target.result;
+          img.style.maxWidth = "100%";
+          imageMessage.appendChild(img);
+          messages.appendChild(imageMessage);
+          try {
+            const processedSrc = await preprocessImage(e.target.result);
+            document.getElementById('spinner-container').style.display = 'flex';
+            let { data: { text } } = await Tesseract.recognize(processedSrc, 'eng');
+            document.getElementById('spinner-container').style.display = 'none';
+            text = text.replace(/[«»‘’“”]/g, "").trim();
+            const extractedTextMsg = document.createElement('li');
+            extractedTextMsg.textContent = "Extracted Text from Image: " + text;
+            messages.appendChild(extractedTextMsg);
+            const deepResponse = await deepSeekChat(text);
+            const deepResponseMsg = document.createElement('li');
+            deepResponseMsg.textContent = "Chatbot: " + deepResponse;
+            messages.appendChild(deepResponseMsg);
+          } catch (err) {
+            document.getElementById('spinner-container').style.display = 'none';
+            const errorMsg = document.createElement('li');
+            errorMsg.textContent = "Error in OCR or pre-processing: " + err.message;
+            messages.appendChild(errorMsg);
+          }
+        };
+        reader.readAsDataURL(file);
+      } else {
+        alert("No file selected.");
+      }
+    });
+  </script>
+</body>
 </html>
